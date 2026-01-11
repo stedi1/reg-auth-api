@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY,
+    login VARCHAR(64) NOT NULL UNIQUE,
+    password VARCHAR(128) NOT NULL,
+    email VARCHAR(128) NOT NULL UNIQUE,
+    registerdate DATE NOT NULL
+);
