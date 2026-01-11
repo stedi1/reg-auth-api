@@ -38,6 +38,10 @@ func (s Storage) AddUser(u User) (id int, err error) {
 		sql.Named("email", u.Email),
 		sql.Named("registerdate", u.RegisterDate),
 	)
+	if err != nil {
+		log.Println("ошибка добавления пользователя:", err)
+		return 0, err
+	}
 	userId, err := res.LastInsertId()
 	if err != nil {
 		return 0, err

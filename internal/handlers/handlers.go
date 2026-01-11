@@ -1,12 +1,19 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"reg-auth-api/internal/services"
 	"reg-auth-api/internal/storage"
+	"strconv"
+	"strings"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
@@ -28,7 +35,29 @@ func (h Handler) MainPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	user, err := h.UserService.Storage.GetUserByID(id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			http.Error(w, "пользователь не найден: "+err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
+	w.Header().Set("Content-Type", "application/json")
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", " ")
+	err = enc.Encode(&user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 }
 
 func (h Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -40,8 +69,8 @@ func (h Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	user := storage.User{
-		Login:        regReq.Login,
-		Email:        regReq.Email,
+		Login:        strings.ToLower(regReq.Login),
+		Email:        strings.ToLower(regReq.Email),
 		RegisterDate: time.Now().Format("2006.01.02"),
 	}
 	// проверяем пароль и хешируем
@@ -58,7 +87,19 @@ func (h Handler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Println(user)
 
+	// сохраняем пользователя в БД
+	id, err := h.UserService.Storage.AddUser(user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	fmt.Fprint(w, id)
 
+}
+
+func (h Handler) LoginUser(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("в процессе"))
 }

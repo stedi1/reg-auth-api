@@ -31,7 +31,8 @@ func main() {
 	r := chi.NewRouter()
 	r.Get("/", handler.MainPage)
 	r.Post("/register", handler.RegisterUser)
-	r.Post("/get/user/{id}", handler.GetUserByID)
+	r.Post("/login", handler.LoginUser)
+	r.Get("/get/user/{id}", handler.GetUserByID)
 
 	// создаем и запускаем сервер с нужным нам роутером
 	server := server.NewServer(r)
